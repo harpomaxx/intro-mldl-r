@@ -65,7 +65,7 @@ winedataset %>% group_by(quality) %>% summarise(n=n())
 ## Split train and test
 ```{r}
 
-
+trainset <- winedataset
 trainIndex <- createDataPartition(as.factor(trainset$quality), p=0.80, list=FALSE)
 data_train <- trainset[ trainIndex,]
 data_test <-  trainset[-trainIndex,]
@@ -79,10 +79,9 @@ data_test$quality <- as.factor(data_test$quality)
 ## Train model
 ```{r}
 
-ctrl_fast <- trainControl(method="repeatedcv", 
+ctrl_fast <- trainControl(method="cv", 
                        number=5, 
-                       repeats = 2,
-                     verboseIter=T,
+                       verboseIter=T,
                      classProbs=F,
                      allowParallel = TRUE
                   
@@ -91,17 +90,17 @@ ctrl_fast <- trainControl(method="repeatedcv",
 
 ```{r}
 registerDoMC(cores=7)
-train_formula<-formula(quality~.-pH)
+train_formula<-formula(quality~.)
 
 #ctrl_fast$sampling<-"up"
 
 rfFitupsam<- train(train_formula,
                data = data_train,
                #tuneLength=9,
-               #method="rpart",
+               method="rpart",
                #method = "rf",
                #method = "knn",
-               preProcess=c("scale","center"),
+               #preProcess=c("scale","center"),
                trControl = ctrl_fast)
 
 rfFitupsam
