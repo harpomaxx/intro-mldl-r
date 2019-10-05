@@ -21,7 +21,8 @@ install.packages(
             "rmarkdown",
             "rprojroot",
             "caTools",
-            "bitops"
+            "bitops",
+            "e1071"
             )
   
 )
