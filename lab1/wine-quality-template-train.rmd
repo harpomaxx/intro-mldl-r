@@ -1,0 +1,139 @@
+---
+title: "Introduction To Machine Learning and Deep Learning with R. LAB 1. The Wine Quality dataset"
+output: html_notebook
+---
+
+```{r}
+# For manipulating the datasets
+library(dplyr)
+library(readr)
+
+# For plotting correlation matrix
+library(ggcorrplot)
+
+
+# Machine Learning library
+library(caret)
+# For Multi-core processing support
+library(doMC)
+# Use 3 cores, changet it accordingly. 
+registerDoMC(cores=7)
+
+```
+# GET THE DATA
+## Load the datasets
+
+THE WINE QUALITY DATASET
+
+The two datasets are related to red and white variants of the Portuguese "Vinho Verde" wine. For more details, consult the reference [Cortez et al., 2009]. 
+Due to privacy and logistic issues, only physicochemical (inputs) and sensory (the output) variables are available (e.g. there is no data about grape types, wine brand, wine selling price, etc.).
+
+These datasets can be viewed as classification or regression tasks. The classes are ordered and not balanced (e.g. there are much more normal wines than excellent or poor ones).
+
+Available at https://archive.ics.uci.edu/ml/datasets/wine+quality
+
+
+```{r}
+winedataset_blanco <- read_csv("data/blanco_train.csv.gz")
+winedataset_red <- read_csv("data/tinto_train.csv.gz")
+
+# Create a new feature for the type 
+winedataset_blanco$type="white"
+winedataset_red$type="red"
+
+# Merge both datasets into one.
+winedataset<-rbind(winedataset_blanco,winedataset_red)
+
+
+
+# Print the dataset
+winedataset
+
+# Create categories
+winedataset <- winedataset %>% mutate(quality=ifelse(quality==3,'low',
+                                   ifelse(quality==4,'low',
+                                   ifelse(quality==5,'medium',
+                                   ifelse(quality==6,'medium',
+                                   ifelse(quality==7,'high','high'
+                                   ))))))
+
+
+winedataset %>% group_by(quality) %>% summarise(n=n())
+```
+
+# TRAIN THE MODEL
+## Split train and test
+```{r}
+
+
+trainIndex <- createDataPartition(as.factor(trainset$quality), p=0.80, list=FALSE)
+data_train <- trainset[ trainIndex,]
+data_test <-  trainset[-trainIndex,]
+colnames(data_train) <- make.names(colnames(data_train))
+colnames(data_test) <- make.names(colnames(data_test))
+data_train$quality <- as.factor(data_train$quality)
+data_test$quality <- as.factor(data_test$quality)
+
+```
+
+## Train model
+```{r}
+
+ctrl_fast <- trainControl(method="repeatedcv", 
+                       number=5, 
+                       repeats = 2,
+                     verboseIter=T,
+                     classProbs=F,
+                     allowParallel = TRUE
+                  
+                     )  
+```
+
+```{r}
+registerDoMC(cores=7)
+train_formula<-formula(quality~.-pH)
+
+#ctrl_fast$sampling<-"up"
+
+rfFitupsam<- train(train_formula,
+               data = data_train,
+               #tuneLength=9,
+               #method="rpart",
+               #method = "rf",
+               #method = "knn",
+               preProcess=c("scale","center"),
+               trControl = ctrl_fast)
+
+rfFitupsam
+
+```
+```{r}
+importance <- varImp(rfFitupsam, scale=FALSE)
+plot(importance)
+```
+
+# TEST THE DATA
+```{r}
+predsrfprobsamp=predict(rfFitupsam,data_test)
+as.data.frame(predsrfprobsamp)
+
+confusionMatrix(predsrfprobsamp,as.factor(data_test$quality))
+```
+
+
+```{r}
+train_formula<-formula(quality~.)
+rfFitupsam<- train(train_formula,
+               data = data_train,
+               method = "rf",
+               #tuneLength = 9,
+               #tuneGrid = svmGrid,
+               #preProcess=c("scale","center"),
+               #metric="ROC",
+               #weights = model_weights,
+               trControl = ctrl_fast)
+```
+
+
+
+

@@ -1,0 +1,271 @@
+---
+title: "Introduction To Machine Learning and Deep Learning with R. LAB 1. The Wine Quality dataset"
+output: html_notebook
+---
+
+```{r}
+# For manipulating the datasets
+library(dplyr)
+library(readr)
+
+# For plotting correlation matrix
+library(ggcorrplot)
+
+
+# Machine Learning library
+library(caret)
+# For Multi-core processing support
+library(doMC)
+# Use 3 cores, changet it accordingly. 
+registerDoMC(cores=3)
+
+```
+# GET THE DATA
+## Load the datasets
+
+THE WINE QUALITY DATASET
+
+The two datasets are related to red and white variants of the Portuguese "Vinho Verde" wine. For more details, consult the reference [Cortez et al., 2009]. 
+Due to privacy and logistic issues, only physicochemical (inputs) and sensory (the output) variables are available (e.g. there is no data about grape types, wine brand, wine selling price, etc.).
+
+These datasets can be viewed as classification or regression tasks. The classes are ordered and not balanced (e.g. there are much more normal wines than excellent or poor ones).
+
+Available at https://archive.ics.uci.edu/ml/datasets/wine+quality
+
+
+```{r}
+winedataset_blanco <- read_csv("data/blanco_train.csv.gz")
+winedataset_red <- read_csv("data/tinto_train.csv.gz")
+
+# Create a new feature for the type 
+winedataset_blanco$type="white"
+winedataset_red$type="red"
+
+# Merge both datasets into one.
+winedataset<-rbind(winedataset_blanco,winedataset_red)
+
+
+
+# Print the dataset
+winedataset
+
+
+#winedataset %>% map(is.null)
+```
+```{r}
+winedataset %>% group_by(quality) %>% summarise(total=n())
+winedataset %>% group_by(`total sulfur dioxide`,quality)  %>% summarise(total=n())
+```
+# VISUALIZE THE DATA
+
+```{r}
+reshape2::melt(winedataset) %>%
+ggplot()+
+  geom_boxplot(aes(x=variable,y=value,fill=variable))+
+  theme_bw()+ 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  theme(legend.position = "none") 
+  
+  
+plotly::ggplotly()
+```
+
+
+
+### Correlation Matrix
+```{r}
+#Matriz de correlacion
+
+cor_matrix<-cor(winedataset %>% select(-type))
+ggcorrplot(cor_matrix)
+```
+
+```{r fig.width=12}
+pairs(winedataset %>% select(-type))
+```
+
+
+### Boxplot volatile
+```{r}
+ggplot(winedataset)+
+  geom_boxplot(aes(x=as.factor(quality),y=`volatile acidity`,fill=as.factor(quality)))+
+  xlab("Quality")+
+  theme_bw()+
+  theme(legend.position = "none")
+  
+```
+### Boxplot alcohol
+```{r}
+ggplot(winedataset)+
+  geom_boxplot(aes(x=as.factor(quality),y=`alcohol`,fill=as.factor(quality)))+ 
+  xlab("Quality")+
+  theme_bw()+
+  theme(legend.position = "none")
+```
+# CLEAN, PREPARE & MANIPULATE THE DATA
+
+## Create categorical features (optional)
+```{r eval=FALSE, include=FALSE}
+trainset<-winedataset %>% mutate(vinegar = ifelse(`volatile acidity`<=0.4,'low',
+                                        ifelse(`volatile acidity`>0.4 & `volatile acidity`<=0.8,'medium',
+                                        'high'))) %>%
+                          mutate(alcohol_level = ifelse(`alcohol`<=9,'low',
+                                        ifelse(`alcohol`>9 & `alcohol`<=11,'medium',
+                                        'high'))) #%>%  select(-`residual sugar`,-`fixed acidity`,-`volatile acidity`,-alcohol,-`free sulfur dioxide`)
+
+
+
+
+```
+
+## Create category labels for quality (optional)
+```{r eval=FALSE, include=FALSE}
+set.seed(10)
+
+trainset <- winedataset %>% mutate(quality=ifelse(quality==3,'low',
+                                   ifelse(quality==4,'low',
+                                   ifelse(quality==5,'medium',
+                                   ifelse(quality==6,'medium',
+                                   ifelse(quality==7,'high','high'
+                                   )))))) #%>% filter(quality %in% c('seven','five','six'))
+
+
+trainset %>% group_by(quality) %>% summarise(n=n()) %>%
+  ggplot()+
+  geom_col(aes(x=quality,y=n,fill=quality))+
+  theme_bw()
+
+```
+
+
+## No features created, quality as factor
+```{r}
+trainset <- winedataset
+trainset$quality <- as.factor(trainset$quality)
+```
+
+
+## Eliminate type
+```{r}
+
+trainset <- trainset %>% select(-type)
+```
+
+```{r}
+names(trainset) %>% as.data.frame()
+```
+
+# TRAIN THE MODEL
+## Split train and test
+```{r}
+
+trainIndex <- createDataPartition(as.factor(trainset$quality), p=0.80, list=FALSE)
+data_train <- trainset[ trainIndex,]
+data_test <-  trainset[-trainIndex,]
+colnames(data_train) <- make.names(colnames(data_train))
+colnames(data_test) <- make.names(colnames(data_test))
+
+
+```
+### Plot class distribution in train
+```{r}
+data_train  %>% group_by(quality) %>% summarise(total=n()) %>%
+  ggplot()+
+  geom_col(aes(x=quality,y=total,fill=quality))+
+  theme_classic()
+
+```
+### Plot class distribution in test
+```{r}
+data_test  %>% group_by(quality) %>% summarise(total=n()) %>%
+  ggplot()+
+  geom_col(aes(x=quality,y=total,fill=quality))+
+  theme_classic()
+```
+## Feature selection
+```{r eval=FALSE, include=FALSE}
+rfecrtl <- rfeControl(functions=rfFuncs, method="cv", number=10,allowParallel=TRUE)
+results <- rfe(quality~. , data=data_train, sizes=c(1:13), rfeControl=rfecrtl)
+results
+predictors(results)
+# plot the results
+plot(results, type=c("g", "o"))
+```
+
+## Train model
+```{r}
+ctrl_fast <- trainControl(method="cv", 
+                     repeats=1,
+                     number=5, 
+                   #  summaryFunction=twoClassSummary,
+                     verboseIter=T,
+                     classProbs=F,
+                     allowParallel = TRUE)  
+```
+
+```{r}
+
+ctrl_fast$sampling<-"up"
+
+svmGrid <-  expand.grid(sigma= c(0.001,0.0001,0.00001), 
+                        C = c(1,2,4,8,16,32,64,80,100,120) 
+                        )
+
+#svmGrid <-  expand.grid(C= c(100), sigma = c(1))
+
+
+train_formula<-formula(quality~.)
+rfFitupsam<- train(train_formula,
+               data = data_train,
+               #method = "rf",   # Radial kernel
+               #method = "xgbTree",
+               method = "rf",
+               #tuneLength = 9,
+               #tuneGrid = svmGrid,
+               #preProcess=c("scale","center"),
+               #metric="ROC",
+               #weights = model_weights,
+               trControl = ctrl_fast)
+
+#plot(rfFitupsam)
+rfFitupsam
+#rfFitupsam$finalModel
+```
+```{r}
+importance <- varImp(rfFitupsam, scale=FALSE)
+plot(importance)
+```
+# TEST THE DATA
+```{r}
+predsrfprobsamp=predict(rfFitupsam,data_test)
+# use for regresion
+#confusionMatrix(as.factor(predsrfprobsamp %>% round()),as.factor(data_test$quality))
+
+confusionMatrix(predsrfprobsamp,as.factor(data_test$quality))
+
+```
+
+
+
+
+```{r}
+#confusionmat <- table(predsrfprobsamp %>% round(),as.factor(data_test$quality))
+
+confusionmat <- table(predsrfprobsamp,as.factor(data_test$quality))
+
+confusionmat
+reshape2::melt(confusionmat) %>%
+  ggplot(aes(x=predsrfprobsamp,y=Var2))+
+  geom_tile(aes(fill=value), colour = "white") + 
+   geom_text(aes(label = sprintf("%1.0f", value)), vjust = 1)+
+  scale_fill_gradient(low = "blue", high = "red")+
+  xlab(" Predicted Quality ")+ylab(" Actual Quality")+
+  scale_y_discrete(limits=c('low','medium','high'))+
+  scale_x_discrete(limits=c('high','medium','low'))+
+  
+  #scale_y_discrete(limits=c('three','six','seven','four','five','eight'))+
+  #scale_x_discrete(limits=c('eight','five','four','seven','six','three'))+
+  
+  theme_bw()+ theme(legend.position = "none")
+```
+
