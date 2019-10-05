@@ -32,11 +32,22 @@ Day 2 Essentials
 
 ## AGENDA
 ### Day 1. Intro to Caret
-* Slides for introduction to machine learning and Caret tutorial
+* [Slides](https://docs.google.com/presentation/d/1K_jhG3GnkK4E_8FtYfXMriH1TWMt8swnOh9XxYVI-Cw/edit?usp=sharing) for introduction to machine learning and Caret tutorial
 * Link to [shiny app](https://harpomaxx.shinyapps.io/dtdemo/) for visualizing CART trees.
 * **Lab 1.** Wine quality prediction template.
 * **Lab 2.** Link to [Kaggle Challenge](http://bit.ly/kaggle-tree-2019) for Inclination Tree Prediction. 
 * **Lab 2.** Link to R notebook for [sample submission](http://rpubs.com/harpomaxx/am2017hackatonejemplo)
+
+#### (AudioVisual material)
+
+**In spanish**
+
+1 - [How Does Kaggle Work?](https://www.youtube.com/watch?v=0CBV_aDcXa8) (5 Mins)
+
+2 - [Exploring the Challenge site](https://www.youtube.com/watch?v=wHh-iswUMLE) (5 Mins)
+
+3 - [Making a Submission](https://www.youtube.com/watch?v=YshAeSdF2h0&t=3s) (1 min)
+
 
 
 ## ISSUES AND COMMUNICATION
