@@ -28,10 +28,6 @@ install.packages(
 )
 ```
 ### Day 2 Essentials
-if using Linux, you should install
-
-`$sudo su apt-get install python3-virtualenv`
-
 
 ```
 install.packages(
