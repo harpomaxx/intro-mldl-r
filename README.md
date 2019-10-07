@@ -5,7 +5,7 @@
 ### Day 1 Essentials 
 
 
-* Rstudio desktop or server version 1.2
+* Rstudio desktop or server version >= 1.1
 * R version >= 3.5
 * Rstudio Notebooks  operational
 
@@ -16,7 +16,7 @@ install.packages(
             "readr",
              "doMC",
             "caret",
-            "RandomForest",
+            "randomForest",
             "rpart",
             "rmarkdown",
             "rprojroot",
@@ -27,7 +27,29 @@ install.packages(
   
 )
 ```
-Day 2 Essentials
+### Day 2 Essentials
+if using Linux, you should install
+
+`$sudo su apt-get install python3-virtualenv`
+
+
+```
+install.packages(
+          c("keras",
+            "devtools"
+          )
+)
+install_keras()
+library(keras)
+  
+)
+```
+Check that you have a working version of Keras running the following code.
+Dont forget to change the working directory to intro-mldl-r/
+
+```
+source(lab3/keras-check.R)
+```
 
 
 
@@ -56,6 +78,8 @@ Day 2 Essentials
 
 3 - [Making a Submission](https://www.youtube.com/watch?v=YshAeSdF2h0&t=3s) (1 min)
 
+
+### Day 2. Intro to Keras
 
 
 ## ISSUES AND COMMUNICATION
