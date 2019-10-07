@@ -1,6 +1,7 @@
 # Machine Learning and Deep Learning Tutorial
 
 ## SETUP
+Please check that you have the following essential packages installed and configured.
 
 ### Day 1 Essentials 
 
