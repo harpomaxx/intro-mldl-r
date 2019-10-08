@@ -1,7 +1,6 @@
 # Machine Learning and Deep Learning Tutorial
 
 ## SETUP
-Please check that you have the following essential packages installed and configured.
 
 ### Day 1 Essentials 
 
@@ -78,6 +77,12 @@ source(lab3/keras-check.R)
 
 ### Day 2. Intro to Keras
 
+**Lab 3.** 
+* Simple Neural Network for the handwritten digits recognition problem. A Classification Problem.
+* Simple Neural Network for property value prediction. A regression Problem.
+
+**Lab 4.**
+* Convolutional Neural Network for a handwritten digits recognition problem.
 
 ## ISSUES AND COMMUNICATION
 
