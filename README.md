@@ -14,7 +14,7 @@
 install.packages(
           c("dplyr",
             "readr",
-             "doMC",
+             "doMC", # Only for linux users
             "caret",
             "randomForest",
             "rpart",
@@ -35,9 +35,9 @@ install.packages(
             "devtools"
           )
 )
-install_keras()
 library(keras)
-  
+# Windows users will need to install conda python distribution  
+install_keras()
 )
 ```
 Check that you have a working version of Keras running the following code.
