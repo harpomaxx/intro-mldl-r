@@ -1,0 +1,137 @@
+---
+title: "R Mnist Dataset with Caret"
+output: html_notebook
+---
+```{r}
+library(dplyr)
+library(readr)
+library(doMC)
+library(purrr)
+library(caret)
+# Use 3 cores, changet it accordingly. 
+registerDoMC(cores=7)
+```
+
+## GET THE DATA
+```{r}
+
+mnist_train <- readRDS("data/mnist_train.rds")
+mnist_test <- readRDS("data/mnist_test.rds")
+str(mnist_train)
+
+mnist_train_X<-mnist_train$X 
+mnist_test_X<-mnist_test$X  
+mnist_train_Y<-mnist_train$Y 
+mnist_test_Y<-mnist_test$Y  
+
+str(mnist_train_X)
+str(mnist_train_Y)
+
+```
+
+
+
+```{r}
+digit <-  mnist_train_X[1,,]
+plot(as.raster(digit, max = 255))
+```
+
+
+
+```{r}
+library(reticulate)
+trainX<-array_reshape(mnist_train_X, c(nrow(mnist_train_X), 28 * 28))
+testX<-array_reshape(mnist_test_X, c(nrow(mnist_test_X),  28 * 28))
+
+train <- cbind(trainX,label=mnist_train_Y) %>% as.data.frame()
+test  <- cbind(testX,label=mnist_test_Y)   %>% as.data.frame()
+
+
+str(trainX)
+str(mnist_train_Y)
+trainX[1,]
+```
+
+
+
+
+```{r}
+trainset <- train 
+trainIndex <- createDataPartition(as.factor(trainset$label), p=0.80, list=FALSE)
+data_train <- trainset[ trainIndex,]
+data_test <-  trainset[-trainIndex,]
+
+data_train %>% group_by(label) %>% summarise(n=n())
+
+#colnames(data_train) <- make.names(colnames(data_train))
+#colnames(data_test) <- make.names(colnames(data_test))
+data_train$label <- as.factor(data_train$label)
+data_test$label <- as.factor(data_test$label)
+
+```
+```{r}
+
+```
+## Train model
+```{r}
+
+ctrl_fast <- trainControl(method="cv", 
+                       number=5, 
+                       verboseIter=T,
+                     classProbs=F,
+                     allowParallel = TRUE
+                  
+                     )  
+```
+
+```{r}
+registerDoMC(cores=6)
+# definimos cual es la variable respuesta (Y) y las variables predictoras (X)
+train_formula<-formula(label~.) # el punto indica que usamos todas las variables X
+                                  # virgulilla separa entre variable Y , X
+
+#ctrl_fast$sampling<-"up"
+
+rfFitupsam<- train(train_formula,
+               data = data_train,
+               #tuneLength=5,
+               #method="rpart", # el algoritmo que quiero usar
+               method = "rf",
+               #method = "knn",
+               #preProcess=c("scale","center"),
+               trControl = ctrl_fast)
+
+rfFitupsam$finalModel
+
+```
+
+
+# TEST THE DATA
+```{r}
+predsrfprobsamp=predict(rfFitupsam,data_test)
+as.data.frame(predsrfprobsamp)
+
+confusionMatrix(predsrfprobsamp,as.factor(data_test$label))
+```
+
+
+
+```{r eval=FALSE, include=FALSE}
+library(reticulate)
+trainX<-array_reshape(mnist_train_images %>% select(-label) %>% data.matrix(), c(1000,28, 28))
+testX<-array_reshape(mnist_test_images %>% select(-label) %>% data.matrix(), c(200,28, 28))
+trainY <- mnist_train_images %>% select(label) %>% data.matrix()
+testY <- mnist_test_images %>% select(label) %>% data.matrix()
+
+train<-list()
+test<-list()
+train$X<-trainX
+train$Y<-trainY
+test$X<-testX
+test$Y<-testY
+
+saveRDS(train,"data/mnist_train.rds")
+saveRDS(test,"data/mnist_test.rds")
+```
+
+#PREPROCESSING
