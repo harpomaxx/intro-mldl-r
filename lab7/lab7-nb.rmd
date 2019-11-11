@@ -1,0 +1,64 @@
+---
+title: "TidyText analysis"
+output: html_notebook
+---
+```{r}
+library(readr)
+library(dplyr)
+library(tidytext)
+```
+```{r}
+movies_dataset<-read_csv("data/movie-pang02.csv.gz")
+glimpse(movies_dataset)
+head(movies_dataset)
+
+```
+# Bag of Words Tokenisation
+
+In this approach, we represent each word in a document as a token (or feature) and each document as a vector of features. In addition, for simplicity, we disregard word order and focus only on the number of occurrences of each word i.e., we represent each document as a multi-set ‘bag’ of words.
+
+
+```{r}
+
+dtm<-movies_dataset %>% select(-class)  %>% sample_n(100) %>% 
+  mutate(row=row_number()) %>% unnest_tokens(word,text) %>% group_by(word,row) %>% 
+  summarise(total=n()) %>% cast_sparse(row,word,total)
+
+str(as.matrix(dtm))
+as.matrix(dtm)[1:2,10:20] 
+
+```
+
+# Remove Stop Words
+
+```{r}
+data(stop_words)
+dtm<-movies_dataset %>% select(-class)  %>% sample_n(100) %>% 
+  mutate(row=row_number()) %>% unnest_tokens(word,text) %>% group_by(word,row) %>% 
+  summarise(total=n()) %>%
+  anti_join(stop_words)
+
+dtm<- dtm %>% cast_sparse(row,word,total)
+str(as.matrix(dtm))
+as.matrix(dtm)[1:2,10:20] 
+```
+
+# Term frequency
+The statistic tf-idf is intended to measure how important a word is to a document in a collection (or corpus) of documents, for example, to one novel in a collection of novels or to one website in a collection of websites. 
+
+
+```{r}
+
+dtm<-movies_dataset %>% select(-class)  %>% sample_n(100) %>% 
+  mutate(row=row_number()) %>% unnest_tokens(word,text) %>% group_by(word,row) %>% 
+  summarise(total=n()) %>%
+  anti_join(stop_words)
+row_words <- dtm%>% count(row,word, sort=TRUE)
+total_words <- dtm %>% group_by(row) %>% summarise(total=n())
+
+inner_join(row_words,total_words) %>%   bind_tf_idf(word, row, n)
+
+
+```
+
+
