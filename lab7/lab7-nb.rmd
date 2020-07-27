@@ -20,12 +20,14 @@ In this approach, we represent each word in a document as a token (or feature) a
 
 ```{r}
 
-dtm<-movies_dataset %>% select(-class)  %>% sample_n(100) %>% 
-  mutate(row=row_number()) %>% unnest_tokens(word,text) %>% group_by(word,row) %>% 
-  summarise(total=n()) %>% cast_sparse(row,word,total)
+dtm<-movies_dataset %>% select(-class)   %>% 
+  mutate(row=row_number())  
 
+dtm <- dtm %>% unnest_tokens(word,text) %>% group_by(word,row) %>% summarise(total=n()) %>% cast_sparse(row,word,total)
+
+dtm
 str(as.matrix(dtm))
-as.matrix(dtm)[1:2,10:20] 
+as.matrix(dtm)[1:2,2000:2030] 
 
 ```
 
@@ -33,14 +35,26 @@ as.matrix(dtm)[1:2,10:20]
 
 ```{r}
 data(stop_words)
-dtm<-movies_dataset %>% select(-class)  %>% sample_n(100) %>% 
-  mutate(row=row_number()) %>% unnest_tokens(word,text) %>% group_by(word,row) %>% 
+head(stop_words)
+movies_dataset<-read_csv("data/movie-pang02.csv.gz")
+
+movies_dataset<-movies_dataset  %>%  mutate(rownumber=row_number()) 
+
+dtm<-movies_dataset %>% select(-class) %>% unnest_tokens(word,text) %>% group_by(word,rownumber) %>% 
   summarise(total=n()) %>%
   anti_join(stop_words)
 
-dtm<- dtm %>% cast_sparse(row,word,total)
-str(as.matrix(dtm))
-as.matrix(dtm)[1:2,10:20] 
+dtm<- dtm %>% cast_sparse(rownumber,word,total)
+dtm<-as.matrix(dtm) %>% as.data.frame()
+
+
+
+
+dtm<-inner_join(movies_dataset,dtm,by=c('row')) %>% select(-text.x)
+dtm %>% select(rownumber)
+```
+```{r}
+i
 ```
 
 # Term frequency

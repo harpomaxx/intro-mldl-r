@@ -5,19 +5,25 @@ output: html_notebook
 
 ```{r}
 # For manipulating the datasets
+
 library(dplyr)
 library(readr)
 
 # For plotting correlation matrix
-library(ggcorrplot)
+#library(ggcorrplot)
 
 
 # Machine Learning library
 library(caret)
 # For Multi-core processing support
-library(doMC)
+#library(doMC)
 # Use 3 cores, changet it accordingly. 
-registerDoMC(cores=7)
+#registerDoMC(cores=4)
+
+#for windows
+#library(parallel)
+#numCores<-detectCores()
+#numCores
 
 ```
 # GET THE DATA
@@ -37,7 +43,7 @@ Available at https://archive.ics.uci.edu/ml/datasets/wine+quality
 winedataset_blanco <- read_csv("data/blanco_train.csv.gz")
 winedataset_red <- read_csv("data/tinto_train.csv.gz")
 
-# Create a new feature for the type 
+# Create a new column for the type 
 winedataset_blanco$type="white"
 winedataset_red$type="red"
 
@@ -52,8 +58,8 @@ winedataset
 # Create categories
 winedataset <- winedataset %>% mutate(quality=ifelse(quality==3,'low',
                                    ifelse(quality==4,'low',
-                                   ifelse(quality==5,'medium',
-                                   ifelse(quality==6,'medium',
+                                   ifelse(quality==5,'low',
+                                   ifelse(quality==6,'high',
                                    ifelse(quality==7,'high','high'
                                    ))))))
 
@@ -69,6 +75,9 @@ trainset <- winedataset
 trainIndex <- createDataPartition(as.factor(trainset$quality), p=0.80, list=FALSE)
 data_train <- trainset[ trainIndex,]
 data_test <-  trainset[-trainIndex,]
+
+data_train %>% group_by(quality) %>% summarise(n=n())
+
 colnames(data_train) <- make.names(colnames(data_train))
 colnames(data_test) <- make.names(colnames(data_test))
 data_train$quality <- as.factor(data_train$quality)
@@ -89,21 +98,23 @@ ctrl_fast <- trainControl(method="cv",
 ```
 
 ```{r}
-registerDoMC(cores=7)
-train_formula<-formula(quality~.)
+#registerDoMC(cores=2)
+# definimos cual es la variable respuesta (Y) y las variables predictoras (X)
+train_formula<-formula(quality~.) # el punto indica que usamos todas las variables X
+                                  # virgulilla separa entre variable Y , X
 
 #ctrl_fast$sampling<-"up"
 
 rfFitupsam<- train(train_formula,
                data = data_train,
-               #tuneLength=9,
-               method="rpart",
-               #method = "rf",
+               tuneLength=5,
+               #method="rpart", # el algoritmo que quiero usar
+               method = "rf,
                #method = "knn",
                #preProcess=c("scale","center"),
                trControl = ctrl_fast)
 
-rfFitupsam
+rfFitupsam$finalModel
 
 ```
 ```{r}
@@ -120,7 +131,7 @@ confusionMatrix(predsrfprobsamp,as.factor(data_test$quality))
 ```
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 train_formula<-formula(quality~.)
 rfFitupsam<- train(train_formula,
                data = data_train,
