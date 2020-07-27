@@ -42,7 +42,7 @@ install_keras()
 )
 ```
 Check that you have a working version of Keras running the following code.
-Dont forget to change the working directory to intro-mldl-r/
+Dont forget to change the working directory to `intro-mldl-r/`
 
 ```
 source(lab3/keras-check.R)
