@@ -1,0 +1,63 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+```
+
+# Create Dataframe
+
+```{r}
+algorithms<-c("genetic","hill climbing","simulated_anealing")
+
+algo_results<-data.frame(
+  time_genetic=rnorm(30,50,5),
+  time_hill=rnorm(30,60,30),
+  time_simulated=rnorm(30,90,20),
+
+  prevstates_genetic=rnorm(30,150,20),
+  prevstates_hill=rnorm(30,200,10),
+  prevstates_simulated=rnorm(30,300,90)
+)  
+  
+algo_results  
+  
+```
+## Convert to Long Format
+```{r}
+library(dplyr)
+algo_results %>% reshape2::melt() # convert to long format using reshape2 package
+algor_results_long<-algo_results %>% tidyr::pivot_longer( 
+  cols = 1:6,
+  names_to = c("metric", "algorithm"),
+  names_pattern = "(time|prevstates)_(.*)",
+  values_to = "value"
+) # convert to long format using tidyr package
+
+```
+
+# Dplyr examples
+## group() and summarise()
+```{r}
+algor_results_long %>% group_by(metric) %>% summarise(mean=mean(value),sd=sd(value),max=max(value),min=min(value))
+```
+## use filter() and select()
+
+```{r}
+algor_results_long %>% filter((algorithm == "genetic" | algorithm == "hill") & metric == 'time') %>% select(algorithm,value)
+```
+```{r}
+algo_results %>% select(time_hill,time_genetic)
+algo_results %>% select(starts_with("prev"))
+
+```
+```{r}
+library(ggplot2)
+algor_results_long %>% filter(metric=="prevstates") %>%
+  
+  ggplot2::ggplot()+ 
+  geom_boxplot(aes(x=algorithm,y=value,fill=algorithm))
+```
+
